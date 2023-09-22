@@ -11,7 +11,7 @@ import java.io.IOException
 /**
  * HTML scrapper for RUT (MIIT) timetable for mobile website
  */
-class HtmlRutMobileScrapper(var url: String) : Scrapper {
+class HtmlRutMobileGroupTimetableScrapper(var url: String) : Scrapper {
     var timetable: Timetable? = null
         private set
 
