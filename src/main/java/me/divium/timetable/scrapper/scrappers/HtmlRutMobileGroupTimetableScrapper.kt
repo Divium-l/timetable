@@ -2,7 +2,7 @@ package me.divium.timetable.scrapper.scrappers
 
 import me.divium.timetable.scrapper.Scrapper
 import me.divium.timetable.scrapper.ParserException
-import me.divium.timetable.scrapper.model.*
+import me.divium.timetable.scrapper.model.timetable.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -11,7 +11,7 @@ import java.io.IOException
 /**
  * HTML scrapper for RUT (MIIT) timetable for mobile website
  */
-class HtmlRutMobileGroupTimetableScrapper(var url: String) : Scrapper {
+class HtmlRutMobileGroupTimetableScrapper(private var url: String) : Scrapper<Timetable> {
     var timetable: Timetable? = null
         private set
 
@@ -23,6 +23,10 @@ class HtmlRutMobileGroupTimetableScrapper(var url: String) : Scrapper {
         }
 
         this.timetable = parseTimetable(url)
+    }
+
+    override fun getResult(): Timetable {
+        return timetable ?: throw ParserException("Nothing to return. Parse first.")
     }
 
     /**

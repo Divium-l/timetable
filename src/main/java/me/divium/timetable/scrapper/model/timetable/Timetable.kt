@@ -1,4 +1,4 @@
-package me.divium.timetable.scrapper.model
+package me.divium.timetable.scrapper.model.timetable
 
 data class Timetable(
     val groupName: String,
