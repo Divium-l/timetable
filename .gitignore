@@ -1,3 +1,6 @@
+### Exclude database and scraping results ###
+data/
+
 HELP.md
 target/
 .mvn/
