@@ -1,7 +1,7 @@
 package me.divium.timetable.scrapper.scrappers
 
-import me.divium.timetable.scrapper.Scrapper
-import me.divium.timetable.scrapper.ParserException
+import me.divium.timetable.scrapper.lib.GroupTimetableScrapper
+import me.divium.timetable.scrapper.exceptions.ParserException
 import me.divium.timetable.scrapper.model.timetable.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -11,8 +11,8 @@ import java.io.IOException
 /**
  * HTML scrapper for RUT (MIIT) timetable for mobile website
  */
-class HtmlRutMobileGroupTimetableScrapper(private var url: String) : Scrapper<Timetable> {
-    var timetable: Timetable? = null
+class HtmlRutMobileGroupTimetableScrapper(private var url: String) : GroupTimetableScrapper {
+    var SGroupTimetable: SGroupTimetable? = null
         private set
 
     override fun scrape() {
@@ -22,18 +22,18 @@ class HtmlRutMobileGroupTimetableScrapper(private var url: String) : Scrapper<Ti
             throw ParserException("Couldn't connect. Original exception message {${e.message}}")
         }
 
-        this.timetable = parseTimetable(url)
+        this.SGroupTimetable = parseTimetable(url)
     }
 
-    override fun getResult(): Timetable {
-        return timetable ?: throw ParserException("Nothing to return. Parse first.")
+    override fun getResult(): SGroupTimetable {
+        return SGroupTimetable ?: throw ParserException("Nothing to return. Parse first.")
     }
 
     /**
      * Parses timetable requested by URL
      * @param url Timetable link
      */
-    private fun parseTimetable(url: String): Timetable {
+    private fun parseTimetable(url: String): SGroupTimetable {
         val document = Jsoup.connect(url).get()
         val groupName = document
             .selectFirst(".page-header-name__title")
@@ -41,19 +41,19 @@ class HtmlRutMobileGroupTimetableScrapper(private var url: String) : Scrapper<Ti
             ?.replace("Расписание учебной группы", "")
             ?.trim() ?: throw ParserException("Couldn't parse group name")
         val weekElements = parseWeeks(document)
-        val weekList: MutableList<Week> = mutableListOf()
+        val SWeekList: MutableList<SWeek> = mutableListOf()
         for (i in weekElements.indices) {
-            val dayList: MutableList<Day> = mutableListOf()
+            val SDayList: MutableList<SDay> = mutableListOf()
             val dayElements = weekElements[i].select("div .info-block")
             for (dayElement in dayElements) {
                 val day = parseDay(dayElement)
-                dayList.add(day)
+                SDayList.add(day)
             }
-            val week = Week("Week ${i + 1}", dayList)
-            weekList.add(week)
+            val SWeek = SWeek("Week ${i + 1}", SDayList)
+            SWeekList.add(SWeek)
         }
 
-        return Timetable(groupName, weekList)
+        return SGroupTimetable(groupName, SWeekList)
     }
 
     /**
@@ -75,20 +75,20 @@ class HtmlRutMobileGroupTimetableScrapper(private var url: String) : Scrapper<Ti
      * @param day Div containing day
      * @return Parsed day
      */
-    private fun parseDay(day: Element): Day {
-        val lessonList: MutableList<Lesson> = mutableListOf()
+    private fun parseDay(day: Element): SDay {
+        val SLessonList: MutableList<SLesson> = mutableListOf()
 
         val header = day.selectFirst(".info-block__header-text") ?: throw ParserException("Day header is null")
         val dayOfWeek = header.text().trim()
 
         val lessons = day.select(".timetable__list-timeslot")
         for (lesson in lessons) {
-            lessonList.addAll(parseLesson(lesson))
+            SLessonList.addAll(parseLesson(lesson))
         }
 
-        return Day(
+        return SDay(
             dayOfWeek = dayOfWeek,
-            lessons = lessonList
+            sLessons = SLessonList
         )
     }
 
@@ -97,8 +97,8 @@ class HtmlRutMobileGroupTimetableScrapper(private var url: String) : Scrapper<Ti
      * @param lesson Div containing lesson
      * @return List of lessons. Typically, list consists of one lesson, but in some cases there could be more
      */
-    private fun parseLesson(lesson: Element): List<Lesson> {
-        val lessonList: MutableList<Lesson>  = mutableListOf()
+    private fun parseLesson(lesson: Element): List<SLesson> {
+        val SLessonList: MutableList<SLesson>  = mutableListOf()
 
         val lessonTimeDiv = lesson.selectFirst(".mb-1") ?: throw ParserException("Couldn't get lesson time")
         val lessonNumber = lessonTimeDiv
@@ -129,8 +129,8 @@ class HtmlRutMobileGroupTimetableScrapper(private var url: String) : Scrapper<Ti
 
             val lessonInfo = parseLessonInfo(lessonInfos[i])
 
-            lessonList.add(
-                Lesson(
+            SLessonList.add(
+                SLesson(
                     name = name,
                     type = type,
                     number = lessonNumber,
@@ -140,7 +140,7 @@ class HtmlRutMobileGroupTimetableScrapper(private var url: String) : Scrapper<Ti
             )
         }
 
-        return lessonList
+        return SLessonList
     }
 
     /**
@@ -148,14 +148,14 @@ class HtmlRutMobileGroupTimetableScrapper(private var url: String) : Scrapper<Ti
      * @param lessonInfo Div containing nested divs with lesson data
      * @return Parsed lesson info
      */
-    private fun parseLessonInfo(lessonInfo: Element): LessonInfo {
+    private fun parseLessonInfo(lessonInfo: Element): SLessonInfo {
         val divs = lessonInfo.children().select("div")
 
         /*val teacher: String? = if (divs.size > 0) divs[0].select("a").attr("title") else null
         val room: String? = if (divs.size > 1) divs[1].text().trim().replace(Regex("\\D"), "") else null
         val group: String? = if (divs.size > 0) divs[2].text().replace("Аудитория", "").trim() else null*/
 
-        return LessonInfo(
+        return SLessonInfo(
             teacher = if (divs.size > 0) divs[0].attr("title") else null,
             room = if (divs.size > 1) divs[1].text().trim().replace(Regex(":?\\d"), "") else null,
             group = if (divs.size > 2) divs[2].text().trim() else null
