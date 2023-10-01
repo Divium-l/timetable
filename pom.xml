@@ -63,6 +63,11 @@
             <version>${kotlin.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-serialization-json</artifactId>
+            <version>1.5.1</version>
+        </dependency>
     </dependencies>
 
 	<build>
@@ -101,6 +106,12 @@
                 </executions>
                 <configuration>
                     <jvmTarget>1.8</jvmTarget>
+                    <!-- Enabling Kotlin @Serialization -->
+                    <compilerPlugins>
+                        <compilerPlugin>
+                            <plugin>kotlinx-serialization</plugin>
+                        </compilerPlugin>
+                    </compilerPlugins>
                 </configuration>
             </plugin>
             <plugin>
