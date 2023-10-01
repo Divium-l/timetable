@@ -1,6 +1,6 @@
 package me.divium.timetable.scrapper.model.timetable
 
-data class Timetable(
+data class SGroupTimetable(
     val groupName: String,
-    val weeks: List<Week>
+    val sWeeks: List<SWeek>
 )

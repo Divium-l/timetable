@@ -1,6 +1,6 @@
 package me.divium.timetable.scrapper.model.timetable
 
-data class Day(
+data class SDay(
     val dayOfWeek: String,
-    val lessons: List<Lesson>
+    val sLessons: List<SLesson>
 )

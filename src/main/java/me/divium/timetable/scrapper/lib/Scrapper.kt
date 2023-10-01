@@ -1,6 +1,4 @@
-package me.divium.timetable.scrapper
-
-import org.jsoup.nodes.Document
+package me.divium.timetable.scrapper.lib
 
 interface Scrapper<Result> {
     fun scrape()

@@ -1,24 +1,24 @@
 package me.divium.timetable.scrapper.scrappers
 
-import me.divium.timetable.scrapper.ParserException
-import me.divium.timetable.scrapper.Scrapper
-import me.divium.timetable.scrapper.model.group.Group
-import me.divium.timetable.scrapper.model.group.Department
-import me.divium.timetable.scrapper.model.group.Year
+import me.divium.timetable.scrapper.lib.DepartmentScrapper
+import me.divium.timetable.scrapper.exceptions.ParserException
+import me.divium.timetable.scrapper.model.group.SDepartment
+import me.divium.timetable.scrapper.model.group.SGroup
+import me.divium.timetable.scrapper.model.group.SYear
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 
 /**
- * Class for parsing groups and their links
+ * Class for parsing departments, groups and their links
  */
-class HtmlRutGroupScrapper(private var url: String) : Scrapper<List<Department>> {
-    private var groups: List<Department> = listOf()
+class HtmlRutDepartmentScrapper(private var url: String) : DepartmentScrapper {
+    private var groups: List<SDepartment> = listOf()
 
     override fun scrape() {
         groups = parseAllInstitutes(url)
     }
 
-    override fun getResult(): List<Department> {
+    override fun getResult(): List<SDepartment> {
         return groups
     }
 
@@ -27,18 +27,18 @@ class HtmlRutGroupScrapper(private var url: String) : Scrapper<List<Department>>
      * @param url Url to parse
      * @return List of institutes
      */
-    private fun parseAllInstitutes(url: String): List<Department> {
+    private fun parseAllInstitutes(url: String): List<SDepartment> {
         val document = Jsoup.connect(url).get()
         val catalog = document.select("section .timetable-catalog") ?: throw ParserException("Time table catalogue not found")
 
         val divs = catalog.select(".info-block_collapse")
-        val departments = mutableListOf<Department>()
+        val SDepartments = mutableListOf<SDepartment>()
         for (div in divs) {
             val institute = parseInstitute(div)
-            departments.add(institute)
+            SDepartments.add(institute)
         }
 
-        return departments
+        return SDepartments
     }
 
     /**
@@ -46,15 +46,15 @@ class HtmlRutGroupScrapper(private var url: String) : Scrapper<List<Department>>
      * @param institute Div containing institute
      * @return List of groups
      */
-    private fun parseInstitute(institute: Element): Department {
+    private fun parseInstitute(institute: Element): SDepartment {
         val name = institute.attr("id")
         val rows = institute.select(".text-form__item")
-        val years = mutableListOf<Year>()
+        val years = mutableListOf<SYear>()
         for (row in rows) {
             val year = parseRow(row)
             years.add(year)
         }
-        return Department(name, years)
+        return SDepartment(name, years)
     }
 
     /**
@@ -62,19 +62,19 @@ class HtmlRutGroupScrapper(private var url: String) : Scrapper<List<Department>>
      * @param row
      * @return Year
      */
-    private fun parseRow(row: Element): Year {
+    private fun parseRow(row: Element): SYear {
         val courseNumber = row.selectFirst(".text-form__item-name")
             ?.text()
             ?.replace("курс", "")
             ?.trim()
             ?.toByte() ?: throw ParserException("Couldn't parse course number")
         val timetableUrls = row.select(".timetable-url")
-        val groups = mutableListOf<Group>()
+        val SGroups = mutableListOf<SGroup>()
         for (timetableUrl in timetableUrls) {
             val group = parseTimetableUrl(timetableUrl)
-            groups.addAll(group)
+            SGroups.addAll(group)
         }
-        return Year(courseNumber, groups)
+        return SYear(courseNumber, SGroups)
     }
 
     /**
@@ -82,24 +82,24 @@ class HtmlRutGroupScrapper(private var url: String) : Scrapper<List<Department>>
      * @param timetableUrl Span containing a row of groups
      * @return List of groups
      */
-    private fun parseTimetableUrl(timetableUrl: Element): List<Group> {
+    private fun parseTimetableUrl(timetableUrl: Element): List<SGroup> {
         val nestedLink = timetableUrl.selectFirst(".dropdown")
 
         if (nestedLink != null) {
             val dropdownLinks = nestedLink.select(".dropdown-item")
-            val groups = mutableListOf<Group>()
+            val SGroups = mutableListOf<SGroup>()
             for (dropDownLink in dropdownLinks) {
                 val url = dropDownLink.attr("href")
                 val groupName = dropDownLink.text().trim()
-                groups.add(Group(groupName, url))
+                SGroups.add(SGroup(groupName, url))
             }
-            return groups
+            return SGroups
         }
         else {
             val link = timetableUrl.selectFirst("a") ?: throw ParserException("Couldn't parse course number")
             val url = link.attr("href")
             val groupName = link.text().trim()
-            return listOf(Group(groupName, url))
+            return listOf(SGroup(groupName, url))
         }
     }
 }
