@@ -90,11 +90,11 @@ public class ScrapperService {
     }
 
     private List<Lesson> parseSWeeks(List<SGroupTimetable> sGroupTimetables) {
-
+        return null;
     }
 
     private List<Lesson> parseSDays(List<SDay> sDays) {
-
+        return null;
     }
 
     private List<Lesson> parseLessons(List<SDay> sDays) {
