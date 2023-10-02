@@ -86,7 +86,7 @@ public class ScrapperService {
     }
 
     private List<Lesson> parseSGroupTimetables(List<SGroupTimetable> sGroups) {
-
+        return null;
     }
 
     private List<Lesson> parseSWeeks(List<SGroupTimetable> sGroupTimetables) {

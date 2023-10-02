@@ -59,6 +59,6 @@ public class TimetableController {
                                     @RequestParam(required = false) String room,
                                     @RequestParam(required = false) String group
     ) {
-
+        return null;
     }
 }
