@@ -1,25 +1,31 @@
 package me.divium.timetable.scrapper.scrappers
 
-import me.divium.timetable.scrapper.lib.DepartmentScrapper
+import me.divium.timetable.scrapper.lib.UniversityScrapper
 import me.divium.timetable.scrapper.exceptions.ParserException
 import me.divium.timetable.scrapper.model.group.SFaculty
 import me.divium.timetable.scrapper.model.group.SGroup
+import me.divium.timetable.scrapper.model.group.SUniversity
 import me.divium.timetable.scrapper.model.group.SYear
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 
+
 /**
  * Class for parsing departments, groups and their links
  */
-class HtmlRutDepartmentScrapper(private var url: String) : DepartmentScrapper {
-    private var groups: List<SFaculty> = listOf()
-
-    override fun scrape() {
-        groups = parseAllInstitutes(url)
+class HtmlRutUniversityScrapper(private var url: String) : UniversityScrapper {
+    companion object {
+        const val UNIVERSITY_NAME = "RUT";
     }
 
-    override fun getResult(): List<SFaculty> {
-        return groups
+    private var faculties: List<SFaculty> = listOf()
+
+    override fun scrape() {
+        faculties = parseAllInstitutes(url)
+    }
+
+    override fun getResult(): SUniversity {
+        return SUniversity(UNIVERSITY_NAME, faculties)
     }
 
     /**
@@ -87,13 +93,13 @@ class HtmlRutDepartmentScrapper(private var url: String) : DepartmentScrapper {
 
         if (nestedLink != null) {
             val dropdownLinks = nestedLink.select(".dropdown-item")
-            val SGroups = mutableListOf<SGroup>()
+            val groups = mutableListOf<SGroup>()
             for (dropDownLink in dropdownLinks) {
                 val url = dropDownLink.attr("href")
                 val groupName = dropDownLink.text().trim()
-                SGroups.add(SGroup(groupName, url))
+                groups.add(SGroup(groupName, url))
             }
-            return SGroups
+            return groups
         }
         else {
             val link = timetableUrl.selectFirst("a") ?: throw ParserException("Couldn't parse course number")

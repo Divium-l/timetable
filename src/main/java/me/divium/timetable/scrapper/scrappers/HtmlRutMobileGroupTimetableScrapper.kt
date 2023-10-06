@@ -12,8 +12,7 @@ import java.io.IOException
  * HTML scrapper for RUT (MIIT) timetable for mobile website
  */
 class HtmlRutMobileGroupTimetableScrapper(private var url: String) : GroupTimetableScrapper {
-    var SGroupTimetable: SGroupTimetable? = null
-        private set
+    private var sGroupTimetable: SGroupTimetable? = null
 
     override fun scrape() {
         try {
@@ -22,11 +21,11 @@ class HtmlRutMobileGroupTimetableScrapper(private var url: String) : GroupTimeta
             throw ParserException("Couldn't connect. Original exception message {${e.message}}")
         }
 
-        this.SGroupTimetable = parseTimetable(url)
+        this.sGroupTimetable = parseTimetable(url)
     }
 
     override fun getResult(): SGroupTimetable {
-        return SGroupTimetable ?: throw ParserException("Nothing to return. Parse first.")
+        return sGroupTimetable ?: throw ParserException("Nothing to return. Parse first.")
     }
 
     /**
@@ -41,19 +40,19 @@ class HtmlRutMobileGroupTimetableScrapper(private var url: String) : GroupTimeta
             ?.replace("Расписание учебной группы", "")
             ?.trim() ?: throw ParserException("Couldn't parse group name")
         val weekElements = parseWeeks(document)
-        val SWeekList: MutableList<SWeek> = mutableListOf()
+        val weekList: MutableList<SWeek> = mutableListOf()
         for (i in weekElements.indices) {
-            val SDayList: MutableList<SDay> = mutableListOf()
+            val dayList: MutableList<SDay> = mutableListOf()
             val dayElements = weekElements[i].select("div .info-block")
             for (dayElement in dayElements) {
                 val day = parseDay(dayElement)
-                SDayList.add(day)
+                dayList.add(day)
             }
-            val SWeek = SWeek("Week ${i + 1}", SDayList)
-            SWeekList.add(SWeek)
+            val week = SWeek("Week ${i + 1}", dayList)
+            weekList.add(week)
         }
 
-        return SGroupTimetable(groupName, SWeekList)
+        return SGroupTimetable(groupName, weekList)
     }
 
     /**
@@ -76,19 +75,19 @@ class HtmlRutMobileGroupTimetableScrapper(private var url: String) : GroupTimeta
      * @return Parsed day
      */
     private fun parseDay(day: Element): SDay {
-        val SLessonList: MutableList<SLesson> = mutableListOf()
+        val lessonList: MutableList<SLesson> = mutableListOf()
 
         val header = day.selectFirst(".info-block__header-text") ?: throw ParserException("Day header is null")
         val dayOfWeek = header.text().trim()
 
         val lessons = day.select(".timetable__list-timeslot")
         for (lesson in lessons) {
-            SLessonList.addAll(parseLesson(lesson))
+            lessonList.addAll(parseLesson(lesson))
         }
 
         return SDay(
             dayOfWeek = dayOfWeek,
-            sLessons = SLessonList
+            sLessons = lessonList
         )
     }
 
@@ -98,7 +97,7 @@ class HtmlRutMobileGroupTimetableScrapper(private var url: String) : GroupTimeta
      * @return List of lessons. Typically, list consists of one lesson, but in some cases there could be more
      */
     private fun parseLesson(lesson: Element): List<SLesson> {
-        val SLessonList: MutableList<SLesson>  = mutableListOf()
+        val lessonList: MutableList<SLesson>  = mutableListOf()
 
         val lessonTimeDiv = lesson.selectFirst(".mb-1") ?: throw ParserException("Couldn't get lesson time")
         val lessonNumber = lessonTimeDiv
@@ -129,7 +128,7 @@ class HtmlRutMobileGroupTimetableScrapper(private var url: String) : GroupTimeta
 
             val lessonInfo = parseLessonInfo(lessonInfos[i])
 
-            SLessonList.add(
+            lessonList.add(
                 SLesson(
                     name = name,
                     type = type,
@@ -140,7 +139,7 @@ class HtmlRutMobileGroupTimetableScrapper(private var url: String) : GroupTimeta
             )
         }
 
-        return SLessonList
+        return lessonList
     }
 
     /**

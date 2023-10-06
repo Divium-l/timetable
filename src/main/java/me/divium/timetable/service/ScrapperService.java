@@ -8,13 +8,14 @@ import me.divium.timetable.repo.GroupRepo;
 import me.divium.timetable.repo.LessonRepo;
 import me.divium.timetable.repo.UniversityRepo;
 import me.divium.timetable.scrapper.exceptions.NoSuchScrapperException;
-import me.divium.timetable.scrapper.lib.DepartmentScrapper;
+import me.divium.timetable.scrapper.lib.UniversityScrapper;
 import me.divium.timetable.scrapper.lib.GroupTimetableScrapper;
 import me.divium.timetable.scrapper.model.group.SFaculty;
 import me.divium.timetable.scrapper.model.group.SGroup;
+import me.divium.timetable.scrapper.model.group.SUniversity;
 import me.divium.timetable.scrapper.model.group.SYear;
 import me.divium.timetable.scrapper.model.timetable.*;
-import me.divium.timetable.scrapper.scrappers.HtmlRutDepartmentScrapper;
+import me.divium.timetable.scrapper.scrappers.HtmlRutUniversityScrapper;
 import me.divium.timetable.scrapper.scrappers.HtmlRutMobileGroupTimetableScrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -44,9 +45,12 @@ public class ScrapperService {
     }
 
     public University scrape(String universityName) {
-        DepartmentScrapper departmentScrapper = getDepartmentScrapper(universityName);
-        departmentScrapper.scrape();
-        List<SFaculty> sFacultyList = (List<SFaculty>) departmentScrapper.getResult();
+        UniversityScrapper universityScrapper = getDepartmentScrapper(universityName);
+        universityScrapper.scrape();
+
+        SUniversity sUniversity = universityScrapper.getResult();
+        List<SFaculty> sFacultyList = sUniversity.getFaculties();
+
         for (SFaculty sFaculty : sFacultyList) {
             var departmentName = sFaculty.getName();
             if (departmentRepo.findByName(departmentName).isEmpty())
@@ -72,7 +76,7 @@ public class ScrapperService {
 
             for (var year : yearList) {
                 byte number = year.getNumber();
-                List<SGroup> groupList = year.getSGroups();
+                List<SGroup> groupList = year.getGroups();
 
                 for (var group : groupList) {
                     String groupName = group.getName();
@@ -124,13 +128,13 @@ public class ScrapperService {
 
     }
 
-    private DepartmentScrapper getDepartmentScrapper(String universityName) {
+    private UniversityScrapper getDepartmentScrapper(String universityName) {
         String url = scrapperUrls.get("rut");
         if (url == null)
             throw new NoSuchScrapperException("Scrapper not found");
 
         return switch (universityName) {
-            case "rut" -> new HtmlRutDepartmentScrapper(url);
+            case "rut" -> new HtmlRutUniversityScrapper(url);
             default -> throw new NoSuchScrapperException("Scrapper not found");
         };
     }
@@ -141,6 +145,5 @@ public class ScrapperService {
             default -> throw new NoSuchScrapperException("Scrapper not found");
         };
     }
-
 }
 
