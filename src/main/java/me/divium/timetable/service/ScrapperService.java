@@ -1,5 +1,6 @@
 package me.divium.timetable.service;
 
+import me.divium.timetable.model.Faculty;
 import me.divium.timetable.model.Lesson;
 import me.divium.timetable.model.University;
 import me.divium.timetable.repo.DepartmentRepo;
@@ -49,11 +50,11 @@ public class ScrapperService {
         for (SFaculty sFaculty : sFacultyList) {
             var departmentName = sFaculty.getName();
             if (departmentRepo.findByName(departmentName).isEmpty())
-                departmentRepo.save(new me.divium.timetable.model.Department(departmentName));
+                departmentRepo.save(new Faculty(departmentName));
             var years = sFaculty.getYears();
             for (var year : years) {
                 year.getNumber();
-                var groups = year.getSGroups();
+                var groups = year.getGroups();
                 for (var group : groups) {
                     group.getName();
                     group.getUrl();

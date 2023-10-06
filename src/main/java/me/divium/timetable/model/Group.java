@@ -24,6 +24,6 @@ public class Group {
     private University university;
 
     @JoinColumn(nullable = false, name = "department_id")
-    @ManyToOne(targetEntity = Department.class, fetch = FetchType.LAZY)
-    private Department department;
+    @ManyToOne(targetEntity = Faculty.class, fetch = FetchType.LAZY)
+    private Faculty faculty;
 }
