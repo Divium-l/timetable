@@ -1,6 +1,5 @@
 package me.divium.timetable.service;
 
-import me.divium.timetable.model.Group;
 import me.divium.timetable.model.Lesson;
 import me.divium.timetable.model.University;
 import me.divium.timetable.repo.DepartmentRepo;
@@ -10,7 +9,7 @@ import me.divium.timetable.repo.UniversityRepo;
 import me.divium.timetable.scrapper.exceptions.NoSuchScrapperException;
 import me.divium.timetable.scrapper.lib.DepartmentScrapper;
 import me.divium.timetable.scrapper.lib.GroupTimetableScrapper;
-import me.divium.timetable.scrapper.model.group.SDepartment;
+import me.divium.timetable.scrapper.model.group.SFaculty;
 import me.divium.timetable.scrapper.model.group.SGroup;
 import me.divium.timetable.scrapper.model.group.SYear;
 import me.divium.timetable.scrapper.model.timetable.*;
@@ -46,12 +45,12 @@ public class ScrapperService {
     public University scrape(String universityName) {
         DepartmentScrapper departmentScrapper = getDepartmentScrapper(universityName);
         departmentScrapper.scrape();
-        List<SDepartment> SDepartmentList = (List<SDepartment>) departmentScrapper.getResult();
-        for (SDepartment SDepartment : SDepartmentList) {
-            var departmentName = SDepartment.getName();
+        List<SFaculty> sFacultyList = (List<SFaculty>) departmentScrapper.getResult();
+        for (SFaculty sFaculty : sFacultyList) {
+            var departmentName = sFaculty.getName();
             if (departmentRepo.findByName(departmentName).isEmpty())
                 departmentRepo.save(new me.divium.timetable.model.Department(departmentName));
-            var years = SDepartment.getYears();
+            var years = sFaculty.getYears();
             for (var year : years) {
                 year.getNumber();
                 var groups = year.getSGroups();
@@ -65,7 +64,7 @@ public class ScrapperService {
         return null;
     }
 
-    private void handleDepartmentScrapeResults(List<SDepartment> departmentList) {
+    private void handleDepartmentScrapeResults(List<SFaculty> departmentList) {
         for (var department : departmentList) {
             String departmentName = department.getName();
             List<SYear> yearList = department.getYears();

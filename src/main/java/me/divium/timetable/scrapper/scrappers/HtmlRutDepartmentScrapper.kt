@@ -2,7 +2,7 @@ package me.divium.timetable.scrapper.scrappers
 
 import me.divium.timetable.scrapper.lib.DepartmentScrapper
 import me.divium.timetable.scrapper.exceptions.ParserException
-import me.divium.timetable.scrapper.model.group.SDepartment
+import me.divium.timetable.scrapper.model.group.SFaculty
 import me.divium.timetable.scrapper.model.group.SGroup
 import me.divium.timetable.scrapper.model.group.SYear
 import org.jsoup.Jsoup
@@ -12,13 +12,13 @@ import org.jsoup.nodes.Element
  * Class for parsing departments, groups and their links
  */
 class HtmlRutDepartmentScrapper(private var url: String) : DepartmentScrapper {
-    private var groups: List<SDepartment> = listOf()
+    private var groups: List<SFaculty> = listOf()
 
     override fun scrape() {
         groups = parseAllInstitutes(url)
     }
 
-    override fun getResult(): List<SDepartment> {
+    override fun getResult(): List<SFaculty> {
         return groups
     }
 
@@ -27,18 +27,18 @@ class HtmlRutDepartmentScrapper(private var url: String) : DepartmentScrapper {
      * @param url Url to parse
      * @return List of institutes
      */
-    private fun parseAllInstitutes(url: String): List<SDepartment> {
+    private fun parseAllInstitutes(url: String): List<SFaculty> {
         val document = Jsoup.connect(url).get()
         val catalog = document.select("section .timetable-catalog") ?: throw ParserException("Time table catalogue not found")
 
         val divs = catalog.select(".info-block_collapse")
-        val SDepartments = mutableListOf<SDepartment>()
+        val sFaculties = mutableListOf<SFaculty>()
         for (div in divs) {
             val institute = parseInstitute(div)
-            SDepartments.add(institute)
+            sFaculties.add(institute)
         }
 
-        return SDepartments
+        return sFaculties
     }
 
     /**
@@ -46,7 +46,7 @@ class HtmlRutDepartmentScrapper(private var url: String) : DepartmentScrapper {
      * @param institute Div containing institute
      * @return List of groups
      */
-    private fun parseInstitute(institute: Element): SDepartment {
+    private fun parseInstitute(institute: Element): SFaculty {
         val name = institute.attr("id")
         val rows = institute.select(".text-form__item")
         val years = mutableListOf<SYear>()
@@ -54,7 +54,7 @@ class HtmlRutDepartmentScrapper(private var url: String) : DepartmentScrapper {
             val year = parseRow(row)
             years.add(year)
         }
-        return SDepartment(name, years)
+        return SFaculty(name, years)
     }
 
     /**
