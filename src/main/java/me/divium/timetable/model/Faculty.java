@@ -1,20 +1,15 @@
 package me.divium.timetable.model;
 
-import jakarta.persistence.*;
+//import jakarta.persistence.*;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 @Data
-@Entity
-@RequiredArgsConstructor
-@Table(name = "departments")
+@AllArgsConstructor
 public class Faculty {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
-
-    @NonNull
-    @Column(nullable = false, unique = true)
     private String name;
+    private List<Year> years;
 }
