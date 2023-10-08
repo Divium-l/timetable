@@ -9,5 +9,4 @@ public class TimetableApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(TimetableApplication.class, args);
 	}
-
 }
