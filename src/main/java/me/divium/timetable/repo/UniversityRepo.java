@@ -1,14 +1,7 @@
 package me.divium.timetable.repo;
 
-import me.divium.timetable.model.University;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+import me.divium.timetable.model.UniversityModel;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
-import java.util.Optional;
-
-@Repository
-public interface UniversityRepo extends CrudRepository<University, Long> {
-    Optional<University> findByName(String name);
+public interface UniversityRepo extends MongoRepository<UniversityModel, String> {
 }

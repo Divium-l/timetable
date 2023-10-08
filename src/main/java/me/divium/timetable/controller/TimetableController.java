@@ -22,43 +22,43 @@ public class TimetableController {
 
         return null;
     }
-
-    @GetMapping("/timetable/{university}")
-    public ResponseEntity<?> getTimetable(@PathVariable String university,
-                                          @RequestParam(required = false) String teacher,
-                                          @RequestParam(required = false) String room,
-                                          @RequestParam(required = false) String group
-    ) {
-        if (teacher == null && room == null && group == null) {
-            timetableService.getUniversityGroups(university);
-            return null;
-        }
-
-        timetableService.getLessonsByParameters(university);
-
-        return null;
-    }
-
-    @GetMapping("/timetable/{university}")
-    public ResponseEntity<?> getGroups(@PathVariable String university) {
-        timetableService.getUniversityGroups(university);
-
-        return null;
-    }
-
-    @GetMapping("/timetable/{university}/{group}")
-    public ResponseEntity<?> getTimetable(@PathVariable String university, @PathVariable String group) {
-        timetableService.getUniversityGroups(university);
-
-        return null;
-    }
-
-    @GetMapping("/timetable/{university}")
-    public ResponseEntity<?> search(@PathVariable String university,
-                                    @RequestParam(required = false) String teacher,
-                                    @RequestParam(required = false) String room,
-                                    @RequestParam(required = false) String group
-    ) {
-        return null;
-    }
+//
+//    @GetMapping("/timetable/{university}")
+//    public ResponseEntity<?> getTimetable(@PathVariable String university,
+//                                          @RequestParam(required = false) String teacher,
+//                                          @RequestParam(required = false) String room,
+//                                          @RequestParam(required = false) String group
+//    ) {
+//        if (teacher == null && room == null && group == null) {
+//            timetableService.getUniversityGroups(university);
+//            return null;
+//        }
+//
+//        timetableService.getLessonsByParameters(university);
+//
+//        return null;
+//    }
+//
+//    @GetMapping("/timetable/{university}")
+//    public ResponseEntity<?> getGroups(@PathVariable String university) {
+//        timetableService.getUniversityGroups(university);
+//
+//        return null;
+//    }
+//
+//    @GetMapping("/timetable/{university}/{group}")
+//    public ResponseEntity<?> getTimetable(@PathVariable String university, @PathVariable String group) {
+//        timetableService.getUniversityGroups(university);
+//
+//        return null;
+//    }
+//
+//    @GetMapping("/timetable/{university}")
+//    public ResponseEntity<?> search(@PathVariable String university,
+//                                    @RequestParam(required = false) String teacher,
+//                                    @RequestParam(required = false) String room,
+//                                    @RequestParam(required = false) String group
+//    ) {
+//        return null;
+//    }
 }
