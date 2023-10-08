@@ -8,7 +8,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-@AllArgsConstructor
+@Builder
 public class Group {
     private String name;
     private List<Week> weeks;
