@@ -12,7 +12,7 @@ class UniversityScrapperFactory {
         fun get(name: String): UniversityScrapper {
             return when(name.lowercase()) {
                 "rut" -> HtmlRutUniversityScrapper(uniUrls["rut"]!!)
-                else -> throw NoSuchScrapperException("Scrapper '$name' not found. If it exists add it to this factory.")
+                else -> throw NoSuchScrapperException("University scrapper for '$name' not found. If it exists add it to this factory.")
             }
         }
     }

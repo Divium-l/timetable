@@ -7,9 +7,9 @@ import me.divium.timetable.scrapper.scrappers.HtmlRutMobileGroupTimetableScrappe
 class GroupTimetableScrapperFactory(val a: String) {
     companion object {
         fun get(name: String, url: String): GroupTimetableScrapper {
-            return when(name) {
-                "rut" -> HtmlRutMobileGroupTimetableScrapper(url)
-                else -> throw NoSuchScrapperException("Scrapper '$name' not found. If it exists add it to this factory.")
+            return when(name.lowercase()) {
+                "rut" -> HtmlRutMobileGroupTimetableScrapper("https://miit.ru$url")
+                else -> throw NoSuchScrapperException("Group timetable scrapper for '$name' not found. If it exists add it to this factory.")
             }
         }
     }
