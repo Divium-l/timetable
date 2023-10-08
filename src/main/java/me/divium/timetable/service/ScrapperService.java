@@ -1,148 +1,190 @@
 package me.divium.timetable.service;
 
-import me.divium.timetable.model.Faculty;
-import me.divium.timetable.model.Lesson;
-import me.divium.timetable.model.University;
-import me.divium.timetable.repo.DepartmentRepo;
-import me.divium.timetable.repo.GroupRepo;
-import me.divium.timetable.repo.LessonRepo;
+import me.divium.timetable.exceptions.TooSoonException;
+import me.divium.timetable.model.*;
 import me.divium.timetable.repo.UniversityRepo;
-import me.divium.timetable.scrapper.exceptions.NoSuchScrapperException;
-import me.divium.timetable.scrapper.lib.UniversityScrapper;
+import me.divium.timetable.scrapper.GroupTimetableScrapperFactory;
+import me.divium.timetable.scrapper.UniversityScrapperFactory;
+import me.divium.timetable.scrapper.exceptions.ParserException;
 import me.divium.timetable.scrapper.lib.GroupTimetableScrapper;
+import me.divium.timetable.scrapper.lib.UniversityScrapper;
 import me.divium.timetable.scrapper.model.group.SFaculty;
 import me.divium.timetable.scrapper.model.group.SGroup;
 import me.divium.timetable.scrapper.model.group.SUniversity;
 import me.divium.timetable.scrapper.model.group.SYear;
 import me.divium.timetable.scrapper.model.timetable.*;
-import me.divium.timetable.scrapper.scrappers.HtmlRutUniversityScrapper;
-import me.divium.timetable.scrapper.scrappers.HtmlRutMobileGroupTimetableScrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class ScrapperService {
-    @Autowired
-    private UniversityRepo universityRepo;
+    private final Logger logger = LoggerFactory.getLogger(ScrapperService.class);
 
     @Autowired
-    private DepartmentRepo departmentRepo;
+    UniversityRepo universityRepo;
 
-    @Autowired
-    private GroupRepo groupRepo;
+    private String currentUniversityName = "";
 
-    @Autowired
-    private LessonRepo lessonRepo;
+    public void scrape(String universityName) {
+        logger.info(String.format("Initiating scraping process for '%s' university", universityName));
 
-    private static final Map<String, String> scrapperUrls = new HashMap<>();
-    static {
-        scrapperUrls.put("rut", "URL");
-    }
+        // Fix this to get only last element
+         List<UniversityModel> universities = universityRepo.findAllByName(universityName);
+         if (!universities.isEmpty()) {
+             LocalDate current = LocalDateTime.now().toLocalDate();
+             LocalDate last = universities.getLast().getScrapeTimestamp().toLocalDate();
 
-    public University scrape(String universityName) {
-        UniversityScrapper universityScrapper = getDepartmentScrapper(universityName);
-        universityScrapper.scrape();
+             if (!current.isAfter(last))
+                 throw new TooSoonException("Last scrape was performed recently");
+         }
 
-        SUniversity sUniversity = universityScrapper.getResult();
-        List<SFaculty> sFacultyList = sUniversity.getFaculties();
+        try {
+            logger.info(String.format("Finding scrapper for '%s' university", universityName));
+            currentUniversityName = universityName;
 
-        for (SFaculty sFaculty : sFacultyList) {
-            var departmentName = sFaculty.getName();
-            if (departmentRepo.findByName(departmentName).isEmpty())
-                departmentRepo.save(new Faculty(departmentName));
-            var years = sFaculty.getYears();
-            for (var year : years) {
-                year.getNumber();
-                var groups = year.getGroups();
-                for (var group : groups) {
-                    group.getName();
-                    group.getUrl();
-                }
-            }
-        }
+            UniversityScrapper universityScrapper = UniversityScrapperFactory.Companion.get(universityName);
+            universityScrapper.scrape();
+            SUniversity sUniversity = universityScrapper.getResult();
 
-        return null;
-    }
+            logger.info("List of groups and URLs successfully retrieved. Starting scraping every group...");
 
-    private void handleDepartmentScrapeResults(List<SFaculty> departmentList) {
-        for (var department : departmentList) {
-            String departmentName = department.getName();
-            List<SYear> yearList = department.getYears();
+            UniversityModel university = UniversityModel.builder()
+                    .name(universityName)
+                    .faculties(sFacultiesToFaculties(sUniversity.getFaculties()))
+                    .scrapeTimestamp(LocalDateTime.now())
+                    .build();
 
-            for (var year : yearList) {
-                byte number = year.getNumber();
-                List<SGroup> groupList = year.getGroups();
+            logger.info("Scraping complete. Saving to database");
+            logger.info("Saving complete");
 
-                for (var group : groupList) {
-                    String groupName = group.getName();
-                    String url = group.getUrl();
-                    GroupTimetableScrapper scrapper = getGroupTimetableScrapper("", url);
-                    scrapper.scrape();
-                    SGroupTimetable result = scrapper.getResult();
-                }
-            }
+            universityRepo.save(university);
+        } finally {
+            currentUniversityName = "";
         }
     }
 
-    private List<Lesson> parseSGroupTimetables(List<SGroupTimetable> sGroups) {
-        return null;
+    private List<Faculty> sFacultiesToFaculties(List<SFaculty> sFaculties) {
+        List<Faculty> faculties = new ArrayList<>();
+        for (SFaculty sFaculty : sFaculties) {
+            sFaculty.getYears();
+            faculties.add(Faculty.builder()
+                    .name(sFaculty.getName())
+                    .years(sYearsToYears(sFaculty.getYears()))
+                    .build()
+            );
+        }
+        return faculties;
     }
 
-    private List<Lesson> parseSWeeks(List<SGroupTimetable> sGroupTimetables) {
-        return null;
+    private List<Year> sYearsToYears(List<SYear> sYears) {
+        List<Year> years = new ArrayList<>();
+        for (SYear sYear : sYears) {
+            years.add(Year.builder()
+                    .number(sYear.getNumber())
+                    .groups(scrapeGroups(sYear.getGroups()))
+                    .build()
+            );
+        }
+        return years;
     }
 
-    private List<Lesson> parseSDays(List<SDay> sDays) {
-        return null;
+    private List<Group> scrapeGroups(List<SGroup> sGroups) {
+        List<Group> groups = new ArrayList<>();
+        for (SGroup sGroup : sGroups) {
+            String groupName = sGroup.getName();
+            String url = sGroup.getUrl();
+
+            logger.info(String.format("Scraping group: '%s', url: '%s'", groupName, url));
+
+            GroupTimetableScrapper timetableScrapper = GroupTimetableScrapperFactory.Companion.get(currentUniversityName, url);
+
+            try {
+                timetableScrapper.scrape();
+                SGroupTimetable sGroupTimetable = timetableScrapper.getResult();
+                groups.add(sGroupTimetableToGroup(sGroupTimetable));
+            } catch (ParserException e) {
+                logger.error(String.format("Couldn't parse group timetable: '%s', url: '%s'. Skipping", groupName, url));
+                groups.add(Group.builder()
+                        .name(groupName)
+                        .weeks(new ArrayList<>())
+                        .build()
+                );
+            }
+        }
+        return groups;
     }
 
-    private List<Lesson> parseLessons(List<SDay> sDays) {
+    private Group sGroupTimetableToGroup(SGroupTimetable sGroupTimetable) {
+        return Group.builder()
+                .name(sGroupTimetable.getGroupName())
+                .weeks(sWeeksToWeeks(sGroupTimetable.getWeeks()))
+                .build();
+    }
+
+    private List<Week> sWeeksToWeeks(List<SWeek> sWeeks) {
+        List<Week> weeks = new ArrayList<>();
+        for (SWeek sWeek : sWeeks) {
+            String weekName = sWeek.getName();
+            List<Day> days = sDaysToDays(sWeek.getDays());
+            weeks.add(Week.builder()
+                    .name(weekName)
+                    .days(days)
+                    .build()
+            );
+        }
+        return weeks;
+    }
+
+    private List<Day> sDaysToDays(List<SDay> sDays) {
+        List<Day> days = new ArrayList<>();
+        for (SDay sDay : sDays) {
+            DayOfWeek dayOfWeek = convertStringToDayOfWeek(sDay.getDayOfWeek());
+            List<Lesson> lessons = sLessonsToLessons(sDay.getSLessons());
+
+            days.add(Day.builder()
+                    .dayOfWeek(dayOfWeek)
+                    .lessons(lessons)
+                    .build()
+            );
+        }
+        return days;
+    }
+
+    private List<Lesson> sLessonsToLessons(List<SLesson> sLessons) {
         List<Lesson> lessons = new ArrayList<>();
-        for (var sDay : sDays) {
-            String groupName = sDay.getDayOfWeek();
-//            Group group = new Group();
-            List<SLesson> sLessons = sDay.getSLessons();
-
-            for (var sLesson : sLessons) {
-                SLessonInfo sLessonInfo = sLesson.getInfo();
-                Lesson lesson = Lesson.builder()
-                        .name(sLesson.getName())
-                        .type(sLesson.getType())
-                        .number(sLesson.getNumber())
-                        .time(sLesson.getTime())
-                        .room(sLessonInfo.getRoom())
-                        .teacher(sLessonInfo.getTeacher())
-                        .build();
-                lessons.add(lesson);
-            }
+        for (SLesson sLesson : sLessons) {
+            SLessonInfo sInfo = sLesson.getInfo();
+            lessons.add(
+                    Lesson.builder()
+                            .name(sLesson.getName())
+                            .type(sLesson.getType())
+                            .time(sLesson.getTime())
+                            .number(sLesson.getNumber())
+                            .teacher(sInfo.getTeacher())
+                            .room(sInfo.getRoom())
+                            .build()
+            );
         }
         return lessons;
     }
 
-    private void handleGroupTimetableScrapeResults() {
-
-    }
-
-    private UniversityScrapper getDepartmentScrapper(String universityName) {
-        String url = scrapperUrls.get("rut");
-        if (url == null)
-            throw new NoSuchScrapperException("Scrapper not found");
-
-        return switch (universityName) {
-            case "rut" -> new HtmlRutUniversityScrapper(url);
-            default -> throw new NoSuchScrapperException("Scrapper not found");
-        };
-    }
-
-    private GroupTimetableScrapper getGroupTimetableScrapper(String universityName, String url) {
-        return switch (universityName) {
-            case "rut" -> new HtmlRutMobileGroupTimetableScrapper(url);
-            default -> throw new NoSuchScrapperException("Scrapper not found");
+    private DayOfWeek convertStringToDayOfWeek(String str) {
+        return switch (str.toLowerCase()) {
+          case "понедельник" -> DayOfWeek.MONDAY;
+          case "вторник" -> DayOfWeek.TUESDAY;
+          case "среда" -> DayOfWeek.WEDNESDAY;
+          case "четверг" -> DayOfWeek.THURSDAY;
+          case "пятница" -> DayOfWeek.FRIDAY;
+          case "суббота" -> DayOfWeek.SATURDAY;
+          default -> DayOfWeek.SUNDAY;
         };
     }
 }
