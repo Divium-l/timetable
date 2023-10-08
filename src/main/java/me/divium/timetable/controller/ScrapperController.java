@@ -1,25 +1,23 @@
 package me.divium.timetable.controller;
 
+import me.divium.timetable.service.ScrapperService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @Controller
 public class ScrapperController {
-    @PostMapping("scrape/perform/{university}")
-    public ResponseEntity<?> performScrape(@PathVariable String university) {
-        return null;
-    }
+    @Autowired
+    ScrapperService scrapperService;
 
-    @PostMapping("scrape/perform/all")
-    public ResponseEntity<?> performScrape() {
-        return null;
-    }
+    @PostMapping("scrape/perform")
+    public ResponseEntity<?> performScrape(@RequestBody String university) {
+        if (university == null || university.isEmpty() || university.isBlank())
+            return ResponseEntity.badRequest().build();
 
-    @GetMapping("/scrape/info")
-    public ResponseEntity<?> getScrapeInfo() {
-        return null;
+        scrapperService.scrape(university);
+        return ResponseEntity.ok().build();
     }
 }
