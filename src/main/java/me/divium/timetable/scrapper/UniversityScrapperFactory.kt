@@ -4,11 +4,14 @@ import me.divium.timetable.scrapper.exceptions.NoSuchScrapperException
 import me.divium.timetable.scrapper.lib.UniversityScrapper
 import me.divium.timetable.scrapper.scrappers.HtmlRutUniversityScrapper
 
-class DepartmentScrapperFactory {
+class UniversityScrapperFactory {
     companion object {
-        fun get(name: String, url: String): UniversityScrapper {
-            return when(name) {
-                "rut" -> HtmlRutUniversityScrapper(url)
+        private val uniUrls: Map<String, String> = mapOf(
+            Pair("rut", "https://miit.ru/timetable")
+        )
+        fun get(name: String): UniversityScrapper {
+            return when(name.lowercase()) {
+                "rut" -> HtmlRutUniversityScrapper(uniUrls["rut"]!!)
                 else -> throw NoSuchScrapperException("Scrapper '$name' not found. If it exists add it to this factory.")
             }
         }
