@@ -14,7 +14,7 @@ import java.util.List;
 @Document(collection = "universities")
 public class UniversityModel {
     @Id
-    private Long id;
+    private String id;
 
     private LocalDateTime scrapeTimestamp;
     private String name;
