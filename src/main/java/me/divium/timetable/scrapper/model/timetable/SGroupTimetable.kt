@@ -5,5 +5,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SGroupTimetable(
     val groupName: String,
-    val sWeeks: List<SWeek>
+    val weeks: List<SWeek>
 )
